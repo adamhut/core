@@ -12,10 +12,17 @@ $elements = $module->viewColumns($item);
     @foreach($elements as $element)
         @if ($element instanceof \Terranet\Administrator\Form\FormSection)
             <tr>
-                <td colspan="2">{{ $element->title() }}</td>
+                <th colspan="2" class="btn-quirk">{{ $element->title() }}</th>
+            </tr>
+        @elseif ($element instanceof \Terranet\Administrator\Columns\MediaElement)
+            <tr>
+                <td style="width: 20%; min-width: 200px;">{{ $element->title() }}</td>
+                <td>
+                    {!! $element->render($item) !!}
+                </td>
             </tr>
         @else
-            @if (! (is_array($value = $element->render($item)) || is_object($value)))
+            @if (! (is_array($value = $element->render($item)) || is_object($value)) || $value instanceof \Carbon\Carbon)
                 <tr>
                     <td style="width: 20%; min-width: 200px;">{{ $element->title() }}</td>
                     <td>{!! $value !!}</td>

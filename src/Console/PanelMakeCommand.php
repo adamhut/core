@@ -28,9 +28,9 @@ class PanelMakeCommand extends GeneratorCommand
      */
     protected $type = 'Dashboard';
 
-    public function fire()
+    public function handle()
     {
-        parent::fire();
+        parent::handle();
 
         if (!$this->option('no-view')) {
             $name = class_basename($this->qualifyClass($this->getNameInput()));
@@ -55,12 +55,12 @@ class PanelMakeCommand extends GeneratorCommand
      */
     protected function replaceClass($stub, $name)
     {
-        $class = str_replace($this->getNamespace($name).'\\', '', $name);
+        $class = str_replace($this->getNamespace($name) . '\\', '', $name);
         $view = $this->getViewName();
 
         $stub = str_replace('DummyClass', $class, $stub);
 
-        return str_replace('DummyTemplate', 'admin.dashboard.'.$view, $stub);
+        return str_replace('DummyTemplate', 'admin.dashboard.' . $view, $stub);
     }
 
     /**
@@ -71,10 +71,10 @@ class PanelMakeCommand extends GeneratorCommand
     protected function getStub()
     {
         if ($this->option('no-view')) {
-            return __DIR__.'/stubs/dashboard.panel.simple.stub';
+            return __DIR__ . '/stubs/dashboard.panel.simple.stub';
         }
 
-        return __DIR__.'/stubs/dashboard.panel.stub';
+        return __DIR__ . '/stubs/dashboard.panel.stub';
     }
 
     /**
@@ -86,7 +86,7 @@ class PanelMakeCommand extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\\'.config('administrator.paths.panel');
+        return $rootNamespace . '\\' . config('administrator.paths.panel');
     }
 
     /**
@@ -104,9 +104,13 @@ class PanelMakeCommand extends GeneratorCommand
     private function templateContents($title, $path)
     {
         return <<<OUT
-<h3 class="panel-heading">{$title}</h3>
-<div class="panel-body">
-    <p class="well">Check me out here [{$path}]</p>
+<div class="panel">
+    <div class="panel-heading">
+        <h4 class="panel-title">{$title}</h4>
+    </div>
+    <div class="panel-body">
+        <p class="well">Check me out here [{$path}]</p>
+    </div>
 </div>
 OUT;
     }
@@ -118,7 +122,7 @@ OUT;
      */
     protected function templatePath($name)
     {
-        $tpl = base_path('resources/views/admin/dashboard/'.$name.'.blade.php');
+        $tpl = base_path('resources/views/admin/dashboard/' . $name . '.blade.php');
 
         return $tpl;
     }

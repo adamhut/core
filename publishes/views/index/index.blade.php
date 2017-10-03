@@ -26,49 +26,48 @@
 @endsection
 
 @section('scaffold.content')
-    <div class="panel">
-        <div class="panel-body">
-            <form method="post" id="collection" action="{{ route('scaffold.batch', ['page' => $module]) }}">
-                <?=Form::hidden('batch_action', null, ['id' => 'batch_action'])?>
-                <?=Form::token()?>
-                <table class="table table-bordered">
-                    <thead>
-                    <tr>
-                        <th width="10">
-                            <label for="toggle_collection_{{ $key = mb_strtolower(str_random(5)) }}">
-                                <input type="checkbox" class="simple toggle-collection" id="toggle_collection_{{ $key }}"/>
-                            </label>
-                        </th>
-                        @each($template->index('header'), $columns, 'column')
-                        <th class="actions" style="width: 10%; vertical-align: baseline">{{ trans('administrator::module.actions') }}</th>
-                    </tr>
-                    </thead>
+    @component('administrator::components.index.index', ['module' => $module, 'items' => $items])
+        @slot('checkboxes')
+            @if($actions->batch()->count())
+                <th width="10">
+                    <label for="toggle_collection_{{ $key = mb_strtolower(str_random(5)) }}">
+                        <input type="checkbox"
+                               class="simple toggle-collection"
+                               id="toggle_collection_{{ $key }}"
+                        />
+                    </label>
+                </th>
+            @endif
+        @endslot
 
-                    <tbody>
-                    @each($template->index('row'), $items, 'item')
-                    </tbody>
+        @slot('headers')
+            @each($template->index('header'), $columns, 'column')
+        @endslot
 
-                    <tfoot>
-                    <tr>
-                        <th width="10">
-                            <label for="toggle_collection_{{ $key = mb_strtolower(str_random(5)) }}">
-                                <input type="checkbox" class="simple toggle-collection" id="toggle_collection_{{ $key }}"/>
-                            </label>
-                        </th>
-                        @each($template->index('header'), $columns, 'column')
-                        <th class="actions" style="width: 10%; vertical-align: baseline">{{ trans('administrator::module.actions') }}</th>
-                    </tr>
-                    </tfoot>
-                </table>
-            </form>
-            <div class="row">
-                <div class="col-md-6 mt20">
-                    @include($template->index('export'))
-                </div>
-                <div class="col-md-6 text-right">
-                    @include($template->index('paginator'))
-                </div>
-            </div>
-        </div>
-    </div>
+        @slot('actions')
+            @unless($actions->readonly())
+                <th class="actions" style="width: 10%; vertical-align: baseline">
+                    {{ trans('administrator::module.actions') }}
+                </th>
+            @endunless
+        @endslot
+
+        @slot('rows')
+            @foreach($items as $item)
+                @include($template->index('row'))
+            @endforeach
+        @endslot
+
+        @slot('exportable')
+            @if ($exportable = method_exists($module, 'formats') && $module->formats())
+                @include($template->index('export'))
+            @endif
+        @endslot
+
+        @slot('paginator')
+            @if (method_exists($items, 'hasPages') && $items->hasPages())
+                @include($template->index('paginator'))
+            @endif
+        @endslot
+    @endcomponent
 @endsection

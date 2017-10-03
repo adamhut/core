@@ -2,15 +2,26 @@ class AdminArchitect {
     constructor() {
         [
             'SidebarNavigation', 'Panels', 'Collections', 'BatchActions',
-            'DateControls', 'LiveSearch', 'Fancybox'
+            'DateControls', 'LiveSearch', 'Fancybox', 'Translatable',
         ].map((method) => {
             AdminArchitect['handle' + method].call();
         });
     }
 
+    static handleTranslatable() {
+        // When Mui tab is switched it will switch all sibling Mui tabs.
+        $('a[data-toggle="tab"]', '.nav-translatable').on('shown.bs.tab', function(e) {
+            let fn = $(e.target),
+                lc = fn.data('locale');
+
+            fn.closest('form').find('a[data-locale="' + lc + '"]').tab('show');
+        });
+    }
+
     static handleSidebarNavigation() {
         const toggleMenu = (marginLeft, marginMain) => {
-            let emailList = ($(window).width() <= 768 && $(window).width() > 640) ? 320 : 360;
+            let emailList = ($(window).width() <= 768 && $(window).width() >
+                640) ? 320 : 360;
 
             if ($('.mainpanel').css('position') === 'relative') {
                 $('.logopanel, .leftpanel').animate({left: marginLeft}, 'fast');
@@ -55,7 +66,9 @@ class AdminArchitect {
 
             if (sub.is(':visible')) {
                 sub.slideUp(200);
-                if (parent.hasClass('nav-active')) { parent.removeClass('nav-active'); }
+                if (parent.hasClass('nav-active')) {
+                    parent.removeClass('nav-active');
+                }
             } else {
                 $(gran).find('.children').each((i, e) => {
                     $(e).slideUp();
@@ -136,17 +149,31 @@ class AdminArchitect {
         });
 
         $('[data-filter-type="daterange"]').daterangepicker({
-            format: 'YYYY-MM-DD',
+            locale: {
+                format: 'YYYY-MM-DD',
+            },
+            autoUpdateInput: false,
             ranges: {
                 'Today': [moment(), moment()],
-                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Yesterday': [
+                    moment().subtract(1, 'days'),
+                    moment().subtract(1, 'days'),
+                ],
                 'Last 7 Days': [moment().subtract(6, 'days'), moment()],
                 'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-                'This Month': [moment().startOf('month'), moment().endOf('month')],
-                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                'This Month': [
+                    moment().startOf('month'),
+                    moment().endOf('month'),
+                ],
+                'Last Month': [
+                    moment().subtract(1, 'month').startOf('month'),
+                    moment().subtract(1, 'month').endOf('month'),
+                ],
             },
-            startDate: moment().subtract(29, 'days'),
-            endDate: moment(),
+        }).on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+        }).on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
         });
     }
 

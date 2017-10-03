@@ -2,6 +2,7 @@
 
 namespace Terranet\Administrator;
 
+use Illuminate\Database\Eloquent\Model;
 use Terranet\Administrator\Contracts\AutoTranslatable;
 use Terranet\Administrator\Contracts\Module;
 use Terranet\Administrator\Services\CrudActions;
@@ -73,9 +74,23 @@ class Scaffolding implements Module, AutoTranslatable
      *
      * @var bool
      */
-    protected $includeDateColumns = true;
+    protected $includeDateColumns;
+
+    /**
+     * Global ACL Manager.
+     *
+     * @var mixed null
+     */
+    protected $guard;
 
     static protected $methods = [];
+
+    public function __construct()
+    {
+        if (null === $this->includeDateColumns) {
+            $this->includeDateColumns = $this->defaultIncludeDateColumnsValue();
+        }
+    }
 
     /**
      * Extend functionality by adding new methods.
@@ -86,7 +101,7 @@ class Scaffolding implements Module, AutoTranslatable
      */
     public static function addMethod($name, $closure)
     {
-        if (! (new static)->hasMethod($name)) {
+        if (!(new static)->hasMethod($name)) {
             static::$methods[$name] = $closure;
         }
     }
@@ -99,6 +114,23 @@ class Scaffolding implements Module, AutoTranslatable
         }
 
         return null;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function guard()
+    {
+        # set the default guard
+        if (null === $this->guard) {
+            $this->guard = config('administrator.acl.manager');
+        }
+
+        if (is_string($this->guard)) {
+            $this->guard = new $this->guard($this);
+        }
+
+        return $this->guard;
     }
 
     /**
@@ -161,7 +193,7 @@ class Scaffolding implements Module, AutoTranslatable
     }
 
     /**
-     * @return mixed Eloquent
+     * @return Model
      */
     public function model()
     {
@@ -257,7 +289,7 @@ class Scaffolding implements Module, AutoTranslatable
      */
     public function magnetParams()
     {
-        return (array) $this->magnetParams;
+        return (array)$this->magnetParams;
     }
 
     /**
@@ -270,5 +302,16 @@ class Scaffolding implements Module, AutoTranslatable
     protected function getQualifiedClassNameOfType($type)
     {
         return app()->getNamespace() . "Http\\Terranet\\Administrator\\{$type}\\" . class_basename($this);
+    }
+
+    /**
+     * @return mixed
+     */
+    protected function defaultIncludeDateColumnsValue()
+    {
+        return config(
+            "administrator.grid.timestamps.{$this->url()}",
+            config('administrator.grid.timestamps.enabled')
+        );
     }
 }

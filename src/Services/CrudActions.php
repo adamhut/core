@@ -9,6 +9,7 @@ use Terranet\Administrator\Contracts\Services\CrudActions as CrudActionsContract
 use Terranet\Administrator\Contracts\Services\Saver;
 use Terranet\Administrator\Exception;
 use Terranet\Administrator\Requests\UpdateRequest;
+use Terranet\Administrator\Scaffolding;
 use Terranet\Administrator\Traits\ExportsCollection;
 use Terranet\Rankable\Rankable;
 
@@ -17,7 +18,7 @@ class CrudActions implements CrudActionsContract
     use ExportsCollection;
 
     /**
-     * @var
+     * @var Scaffolding
      */
     protected $module;
 
@@ -158,9 +159,13 @@ class CrudActions implements CrudActionsContract
             if (method_exists($this, $method)) {
                 $response = call_user_func_array([$this, $method], $payload);
             }
-            # Check for CRUD authorizations directly in Scaffolding Resource.
+            # Check for CRUD authorizations in Scaffolding Resource.
             else if ($this->module->hasMethod($method)) {
                 $response = call_user_func_array([$this->module, $method], $payload);
+            }
+            # Check for CRUD authorizations from GuardManager service.
+            else if (($guard = $this->module->guard()) && method_exists($guard, $method)) {
+                $response = call_user_func_array([$guard, $method], $payload);
             }
 
             static::$responses[$key] = $response;

@@ -2,6 +2,7 @@
 
 namespace Terranet\Administrator\Services;
 
+use Illuminate\Database\Eloquent\Builder;
 use Terranet\Administrator;
 use Terranet\Administrator\Contracts\Module;
 use Terranet\Administrator\Contracts\Services\Finder as FinderContract;
@@ -20,6 +21,11 @@ class Finder implements FinderContract
      * @var
      */
     protected $model;
+
+    /**
+     * @var Builder
+     */
+    protected $query;
 
     /**
      * Query assembler.
@@ -49,15 +55,18 @@ class Finder implements FinderContract
      *
      * @return mixed
      */
-    public function getQuery()
+    public function getQuery(): Builder
     {
-        $this->assembler();
+        # prevent duplicated execution
+        if (null === $this->query) {
+            $this->initQuery()
+                 ->applyFilters()
+                 ->applySorting();
 
-        $this->handleFilter();
+            $this->query = $this->assembler()->getQuery();
+        }
 
-        $this->handleSortable();
-
-        return $this->assembler()->getQuery();
+        return $this->query;
     }
 
     /**
@@ -74,7 +83,16 @@ class Finder implements FinderContract
         return $this->assembler;
     }
 
-    protected function handleFilter()
+    protected function initQuery()
+    {
+        if (method_exists($this->module, 'query')) {
+            $this->assembler()->applyQueryCallback([$this->module, 'query']);
+        }
+
+        return $this;
+    }
+
+    protected function applyFilters()
     {
         if ($filter = app('scaffold.filter')) {
             if ($filters = $filter->filters()) {
@@ -86,7 +104,7 @@ class Finder implements FinderContract
                     $magnet = $this->removeDuplicates($magnet, $filters);
                 }
 
-                $this->handleMagnetFilter($magnet);
+                $this->applyMagnetFilter($magnet);
             }
 
             if ($scopes = $filter->scopes()) {
@@ -97,6 +115,8 @@ class Finder implements FinderContract
                 }
             }
         }
+
+        return $this;
     }
 
     /**
@@ -127,7 +147,7 @@ class Finder implements FinderContract
      *
      * @param MagnetParams $magnet
      */
-    protected function handleMagnetFilter(MagnetParams $magnet)
+    protected function applyMagnetFilter(MagnetParams $magnet)
     {
         $filters = new Administrator\Form\Collection\Mutable;
 
@@ -150,7 +170,7 @@ class Finder implements FinderContract
     /**
      * Extend query with Order By Statement.
      */
-    protected function handleSortable()
+    protected function applySorting()
     {
         $sortable = app('scaffold.sortable');
         $element = $sortable->element();
@@ -161,6 +181,8 @@ class Finder implements FinderContract
                 $this->assembler()->sort($element, $direction);
             }
         }
+
+        return $this;
     }
 
     protected function perPage()

@@ -2,20 +2,69 @@
 
 namespace Terranet\Administrator\Collection;
 
+use Closure;
 use Illuminate\Support\Collection as BaseCollection;
+use Terranet\Administrator\Columns\Element;
+use Terranet\Administrator\Columns\MediaElement;
 use Terranet\Administrator\Exception;
 
 class Mutable extends BaseCollection
 {
     /**
+     * Push an item onto the end of the collection.
+     *
+     * @param  mixed $element
+     * @param Closure|null $callback
+     * @return $this
+     */
+    public function push($element, Closure $callback = null)
+    {
+        $element = $this->createElement($element);
+
+        if ($callback) {
+            $callback($element);
+        }
+
+        parent::push($element);
+
+        return $this;
+    }
+
+    /**
+     * @param string $collection
+     *
+     * @param Closure|null $callback
+     * @return $this
+     */
+    public function media($collection = 'default', \Closure $callback = null)
+    {
+        $element = new MediaElement($collection);
+
+        if ($callback) {
+            $callback($element);
+        }
+
+        $this->push($element);
+
+        return $this;
+    }
+
+    /**
      * Insert an element into collection at specified position.
      *
      * @param $element
      * @param $position
+     * @param Closure|null $callback
      * @return $this
      */
-    public function insert($element, $position)
+    public function insert($element, $position, Closure $callback = null)
     {
+        $element = $this->createElement($element);
+
+        if ($callback) {
+            $callback($element);
+        }
+
         if (is_string($position)) {
             $this->push($element);
 
@@ -84,6 +133,16 @@ class Mutable extends BaseCollection
      */
     public function update($id, callable $callback)
     {
+        if (str_contains($id, ',')) {
+            collect(explode(',', $id))
+                ->map('trim')
+                ->each(function ($element) use ($callback) {
+                    $this->update($element, $callback);
+                });
+
+            return $this;
+        }
+
         $element = $this->find($id);
 
         if ($element && $callback) {
@@ -200,10 +259,10 @@ class Mutable extends BaseCollection
      * Add a new elements group.
      *
      * @param $id
-     * @param \Closure $callback
+     * @param Closure $callback
      * @return $this
      */
-    public function group($id, \Closure $callback)
+    public function group($id, Closure $callback)
     {
         $group = new Group($id);
 
@@ -306,5 +365,20 @@ class Mutable extends BaseCollection
     protected function notFound($id)
     {
         throw new Exception(sprintf('Element [%s] does not exist.', $id));
+    }
+
+    /**
+     * Create element object from string.
+     *
+     * @param $element
+     * @return mixed
+     */
+    protected function createElement($element)
+    {
+        if (is_string($element)) {
+            $element = new Element($element);
+        }
+
+        return $element;
     }
 }

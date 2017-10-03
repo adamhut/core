@@ -5,8 +5,8 @@ namespace Terranet\Administrator\Form\Collection;
 use Closure;
 use Terranet\Administrator\Collection\Mutable as BaseMutableCollection;
 use Terranet\Administrator\Exception;
-use Terranet\Administrator\Form\FilterElement;
 use Terranet\Administrator\Form\FormElement;
+use Terranet\Administrator\Form\FormSection;
 use Terranet\Administrator\Form\InputFactory;
 use Terranet\Administrator\Form\Type\Ckeditor;
 use Terranet\Administrator\Form\Type\Markdown;
@@ -53,7 +53,7 @@ class Mutable extends BaseMutableCollection
 
         # Allow a callable input type.
         if (is_callable($inputType)) {
-            call_user_func_array($inputType, [  $element]);
+            call_user_func_array($inputType, [$element]);
         }
 
         if (is_numeric($position)) {
@@ -68,6 +68,22 @@ class Mutable extends BaseMutableCollection
         }
 
         return $this;
+    }
+
+    /**
+     * Create a section.
+     *
+     * @param $section
+     * @param null $position
+     * @return $this
+     */
+    public function section($section, $position = null)
+    {
+        if (is_string($section)) {
+            $section = new FormSection($section);
+        }
+
+        return null !== $position ? $this->insert($section, $position) : $this->push($section);
     }
 
     public function hasEditors($editor)
@@ -102,5 +118,20 @@ class Mutable extends BaseMutableCollection
         if (!in_array($editor, ['ckeditor', 'tinymce', 'medium', 'markdown'])) {
             throw new Exception(sprintf("Unknown editor %s", $editor));
         }
+    }
+
+    /**
+     * Create element object from string.
+     *
+     * @param $element
+     * @return mixed
+     */
+    protected function createElement($element)
+    {
+        if (is_string($element)) {
+            $element = new FormElement($element);
+        }
+
+        return $element;
     }
 }
